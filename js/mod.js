@@ -13,14 +13,13 @@ let modInfo = {
 
 // Set your version in num and name
 let VERSION = {
-	num: "0.01",
-	name: "Almost Literally Nothing",
+	num: "0.0.3",
+	name: "Karma",
 }
 
 let changelog = `<h1>Changelog:</h1><br>
-	<h3>v0.0</h3><br>
-		- Added things.<br>
-		- Added stuff.`
+	<h3>v0.0.3</h3><br>
+		- Added Recycling.`
 
 let winText = `Congratulations! You have reached the end and beaten this game, but for now...`
 
@@ -34,7 +33,7 @@ function getStartPoints(){
 
 // Determines if it should show points/sec
 function canGenPoints(){
-	return true
+	return hasUpgrade('p', 11)
 }
 
 // Calculate points/sec!
@@ -43,6 +42,10 @@ function getPointGen() {
 		return new Decimal(0)
 
 	let gain = new Decimal(1)
+	if (hasUpgrade('p', 21)) gain = gain.times(2)
+	if (hasUpgrade('p', 12)) gain = gain.times(upgradeEffect('p', 12))
+	if (hasUpgrade('p', 22)) gain = gain.times(upgradeEffect('p', 22))
+	if (hasUpgrade('r', 11)) gain = gain.times(upgradeEffect('r', 11))
 	return gain
 }
 
