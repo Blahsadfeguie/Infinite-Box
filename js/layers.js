@@ -14,6 +14,14 @@ addLayer("p", {
     baseAmount() {return player.points}, // Get the current amount of baseResource
     type: "normal", // normal: cost to gain currency depends on amount gained. static: cost depends on how much you already have
     exponent: 0.5, // Prestige currency exponent
+    doReset(resettingLayer) {
+        let keep = [];
+        if (hasMilestone('r',0)) keep.push(11)
+        if (layers[resettingLayer].row > this.row) {
+            layerDataReset("p", [])
+            player[this.layer].upgrades = keep
+        }
+    },
     gainMult() { // Calculate the multiplier for main currency from bonuses
         mult = new Decimal(1)
         if (hasUpgrade('p', 13)) mult = mult.times(upgradeEffect('p', 13))
@@ -30,6 +38,12 @@ addLayer("p", {
     ],
     layerShown(){return true},
     resetDescription: "Open some boxes: ",
+    infoboxes: {
+        lore: {
+            title: "The Package",
+            body() { return "You received a mysterious package in the mail. When you open it, you find that there's a smaller box inside. In fact, it appears to be boxes all the way down!<br><br>But there must be <i>something</i> in the middle of it all. You'll just have to build up enough <b>Resolve</b> to open all of its layers and get to the center!" },
+        },
+    },
     upgrades: {
         11: {
             title: "Deep Breath",
@@ -46,7 +60,10 @@ addLayer("p", {
             description: "Let your progress motivate you. Increase resolve gain based on empty boxes.",
             cost: new Decimal(2),
             effect() {
-                return player[this.layer].points.add(1).pow(0.5)
+                let pointvalue = new Decimal(0);
+                if (hasUpgrade('r',13)) {pointvalue = player[this.layer].total}
+                else {pointvalue = player[this.layer].points}
+                return pointvalue.add(1).pow(0.5)
             },
             effectDisplay() { return format(upgradeEffect(this.layer, this.id))+"x" }, // Add formatting to the effect
         },
@@ -73,7 +90,8 @@ addLayer("p", {
             description: "The sight of all these empty boxes makes you want more. Empty boxes boosts itself.",
             cost: new Decimal(25),
             effect() {
-                return player[this.layer].points.add(1).pow(0.1)
+                if (hasUpgrade('r',12)) return player[this.layer].points.add(1).pow(0.2)
+                else return player[this.layer].points.add(1).pow(0.1)
             },
             effectDisplay() { return format(upgradeEffect(this.layer, this.id))+"x" }, // Add formatting to the effect
         },
@@ -96,6 +114,7 @@ addLayer("r", {
     exponent: 0.5, // Prestige currency exponent
     gainMult() { // Calculate the multiplier for main currency from bonuses
         mult = new Decimal(1)
+        mult = mult.times(buyableEffect('r',13))
         return mult
     },
     gainExp() { // Calculate the exponent on main currency from bonuses
@@ -108,9 +127,22 @@ addLayer("r", {
     ],
     layerShown(){return true},
     resetDescription: "Recycle empty boxes for ",
+    infoboxes: {
+        lore: {
+            title: "Recycling Center",
+            body() { return "With your quarters filled with empty boxes and nothing to show for it, you decide to take a break and turn them in to the <b>Recycling Center</b>.<br><br>These recycling enthusiasts have a <b>Karma</b> system in which turning in recyclables grants you reward points which you can cash in for various equipment and benefits. This should simplify your box-opening journey somewhat." },
+        },
+    },
+    milestones: {
+        0: {
+            requirementDescription: "2 total karma",
+            effectDescription: "Keep the first box upgrade on reset",
+            done() {return player.r.total.gte(2)}
+        }
+    },
     buyables: {
         11: {
-            cost(x) { return new Decimal(getBuyableAmount(this.layer, this.id)).add(1).pow(2) },
+            cost(x) { return new Decimal(getBuyableAmount(this.layer, this.id)).add(1).pow(2.2) },
             title: "Boxcutter",
             display() { return "A must-have for any aspiring box-opener. Boosts boxes opened. Currently: "+format(this.effect())+"x<br>Level: " + formatWhole(getBuyableAmount(this.layer, this.id)) + "<br>Cost: " + format(this.cost()) + " Karma" },
             canAfford() { return player[this.layer].points.gte(this.cost()) },
@@ -119,7 +151,33 @@ addLayer("r", {
                 setBuyableAmount(this.layer, this.id, getBuyableAmount(this.layer, this.id).add(1))
             },
             effect() {
-                return new Decimal(1.5).pow(getBuyableAmount(this.layer, this.id))
+                return new Decimal(1.3).pow(getBuyableAmount(this.layer, this.id))
+            }
+        },
+        12: {
+            cost(x) { return new Decimal(getBuyableAmount(this.layer, this.id)).add(1).pow(2.5) },
+            title: "Watercooler",
+            display() { return "A convenient source of water for hydration. Boosts resolve gain. Currently: "+format(this.effect())+"x<br>Level: " + formatWhole(getBuyableAmount(this.layer, this.id)) + "<br>Cost: " + format(this.cost()) + " Karma" },
+            canAfford() { return player[this.layer].points.gte(this.cost()) },
+            buy() {
+                player[this.layer].points = player[this.layer].points.sub(this.cost())
+                setBuyableAmount(this.layer, this.id, getBuyableAmount(this.layer, this.id).add(1))
+            },
+            effect() {
+                return new Decimal(1.3).pow(getBuyableAmount(this.layer, this.id))
+            }
+        },
+        13: {
+            cost(x) { return new Decimal(getBuyableAmount(this.layer, this.id)).add(1).pow(3) },
+            title: "Fancy Hat",
+            display() { return "Recyclers here love really fancy hats, and wearing one will boost your karma gain. Currently: "+format(this.effect())+"x<br>Level: " + formatWhole(getBuyableAmount(this.layer, this.id)) + "<br>Cost: " + format(this.cost()) + " Karma" },
+            canAfford() { return player[this.layer].points.gte(this.cost()) },
+            buy() {
+                player[this.layer].points = player[this.layer].points.sub(this.cost())
+                setBuyableAmount(this.layer, this.id, getBuyableAmount(this.layer, this.id).add(1))
+            },
+            effect() {
+                return new Decimal(1.3).pow(getBuyableAmount(this.layer, this.id))
             }
         }
     },
@@ -132,6 +190,16 @@ addLayer("r", {
                 return player[this.layer].total.add(1).pow(0.2)
             },
             effectDisplay() { return format(upgradeEffect(this.layer, this.id))+"x" }, // Add formatting to the effect
+        },
+        12: {
+            title: "Cardboard Addict",
+            description: "There's something about the texture... Makes <b>Cascade</b> stronger.",
+            cost: new Decimal(5),
+        },
+        13: {
+            title: "Share Your Story",
+            description: "Your tale intrigues recyclers. Makes <b>Motivation</b> instead based on total boxes opened since last recycle.",
+            cost: new Decimal(10),
         }
     },
 })

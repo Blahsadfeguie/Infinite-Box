@@ -13,11 +13,14 @@ let modInfo = {
 
 // Set your version in num and name
 let VERSION = {
-	num: "0.0.3",
-	name: "Karma",
+	num: "0.0.4",
+	name: "Karma Things",
 }
 
 let changelog = `<h1>Changelog:</h1><br>
+	<h3>v0.0.4</h3><br>
+		- Added a few more Karma buyables and upgrades, and a milestone.<br>
+		- Added the start of lore.<br>
 	<h3>v0.0.3</h3><br>
 		- Added Recycling.`
 
@@ -46,6 +49,7 @@ function getPointGen() {
 	if (hasUpgrade('p', 12)) gain = gain.times(upgradeEffect('p', 12))
 	if (hasUpgrade('p', 22)) gain = gain.times(upgradeEffect('p', 22))
 	if (hasUpgrade('r', 11)) gain = gain.times(upgradeEffect('r', 11))
+	gain = gain.times(buyableEffect('r',12))
 	return gain
 }
 
